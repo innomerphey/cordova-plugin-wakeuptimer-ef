@@ -50,16 +50,7 @@ public class WakeupReceiver extends BroadcastReceiver {
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(i);
 
-			if(WakeupPlugin.connectionCallbackContext!=null) {
-				JSONObject o=new JSONObject();
-				o.put("type", "wakeup");
-				if (extras!=null) {
-					o.put("extra", extras);
-				}
-				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
-				pluginResult.setKeepCallback(true);
-				WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);  
-			}
+			WakeupPlugin.sendWakeupResult(extras);
 			
 			if (extrasBundle!=null && extrasBundle.getString("type")!=null && extrasBundle.getString("type").equals("daylist")) {
 				// repeat in one week
@@ -81,8 +72,6 @@ public class WakeupReceiver extends BroadcastReceiver {
 				}
 			}
 
-		} catch (JSONException e){
-			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}

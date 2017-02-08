@@ -5,6 +5,10 @@ var exec = require("cordova/exec");
  */    
 var Wakeup = function(){};
 
+Wakeup.prototype.bind = function(success, error, options) {
+    exec(success, error, "WakeupPlugin", "bind", [options]);
+};
+
 Wakeup.prototype.wakeup = function(success, error, options) {
     exec(success, error, "WakeupPlugin", "wakeup", [options]);
 };
