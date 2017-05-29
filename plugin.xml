@@ -2,13 +2,14 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
-    id="org.nypr.cordova.wakeupplugin"
-    version="0.1.0">
+    id="cordova-plugin-wakeuptimer-ef"
+    version="1.0.1">
     <name>WakeupTimer</name>
     <description>Wakeup Plugin</description>
     <license>Apache 2.0</license>
     <keywords>sleep,wakeup,timer</keywords>
-    <repo>git@git.wnyc.net:mobile/cordova/cordova-plugin-wakeuptimer.git</repo>
+    <repo>git@github.com:EltonFaust/cordova-plugin-wakeuptimer.git</repo>
+    <issue>https://github.com/EltonFaust/cordova-plugin-wakeuptimer/issues</issue>
 
     <js-module src="www/wakeup.js" name="Wakeup">
       <clobbers target="wakeuptimer"/>
@@ -27,7 +28,7 @@
           <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
           <uses-permission android:name="android.permission.WAKE_LOCK" />
         </config-file>
-        
+
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <receiver android:name="org.nypr.cordova.wakeupplugin.WakeupReceiver" />
             <receiver android:name="org.nypr.cordova.wakeupplugin.WakeupBootReceiver">  
@@ -36,7 +37,7 @@
               </intent-filter>
             </receiver>
         </config-file>
-        
+
         <source-file src="src/android/WakeupPlugin.java" target-dir="src/org/nypr/cordova/wakeupplugin/" />
         <source-file src="src/android/WakeupReceiver.java" target-dir="src/org/nypr/cordova/wakeupplugin/" />
         <source-file src="src/android/WakeupBootReceiver.java" target-dir="src/org/nypr/cordova/wakeupplugin/" />
@@ -54,5 +55,4 @@
         <header-file src="src/ios/WakeupPlugin.h" />
         <source-file src="src/ios/WakeupPlugin.m" />
     </platform>
-
 </plugin>

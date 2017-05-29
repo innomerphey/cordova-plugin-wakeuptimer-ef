@@ -1,0 +1,28 @@
+{
+  "name": "cordova-plugin-wakeuptimer-ef",
+  "version": "1.0.1",
+  "description": "Wakeup Plugin",
+  "cordova": {
+    "id": "cordova-plugin-wakeuptimer-ef",
+    "platforms": [
+      "android", "ios"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EltonFaust/cordova-plugin-wakeuptimer.git"
+  },
+  "keywords": [
+    "sleep",
+    "wakeup",
+    "timer",
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "EltonFaust",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/EltonFaust/cordova-plugin-wakeuptimer/issues"
+  },
+  "homepage": "https://github.com/EltonFaust/cordova-plugin-wakeuptimer#readme"
+}
