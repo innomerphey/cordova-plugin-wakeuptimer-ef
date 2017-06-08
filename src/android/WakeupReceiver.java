@@ -24,7 +24,7 @@ public class WakeupReceiver extends BroadcastReceiver {
 	@SuppressLint({ "SimpleDateFormat", "NewApi" })
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Log.d(LOG_TAG, "wakeuptimer expired at " + sdf.format(new Date().getTime()));
 	
 		try {
@@ -40,22 +40,24 @@ public class WakeupReceiver extends BroadcastReceiver {
 			i.putExtra("wakeup", true);
 			Bundle extrasBundle = intent.getExtras();
 			String extras=null;
-			if (extrasBundle!=null && extrasBundle.get("extra")!=null) {
+
+			if (extrasBundle != null && extrasBundle.get("extra") != null) {
 				extras = extrasBundle.get("extra").toString();
 			}
-			
-			if (extras!=null) {
+
+			if (extras != null) {
 				i.putExtra("extra", extras);
 			}
+
 			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			context.startActivity(i);
 
 			WakeupPlugin.sendWakeupResult(extras);
 			
-			if (extrasBundle!=null && extrasBundle.getString("type")!=null && extrasBundle.getString("type").equals("daylist")) {
+			if (extrasBundle != null && extrasBundle.getString("type") != null && extrasBundle.getString("type").equals("daylist")) {
 				// repeat in one week
 				Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
-				Log.d(LOG_TAG,"resetting alarm at " + sdf.format(next));
+				Log.d(LOG_TAG, "resetting alarm at " + sdf.format(next));
 	
 				Intent reschedule = new Intent(context, WakeupReceiver.class);
 				if (extras!=null) {
@@ -65,13 +67,13 @@ public class WakeupReceiver extends BroadcastReceiver {
 	
 				PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent, PendingIntent.FLAG_UPDATE_CURRENT);
 				AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-				if (Build.VERSION.SDK_INT>=19) {
+
+				if (Build.VERSION.SDK_INT >= 19) {
 					alarmManager.setExact(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
 				} else {
 					alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
 				}
 			}
-
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
