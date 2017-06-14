@@ -26,7 +26,7 @@ public class WakeupReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Log.d(LOG_TAG, "wakeuptimer expired at " + sdf.format(new Date().getTime()));
-	
+
 		try {
 			String packageName = context.getPackageName();
 			Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
@@ -53,18 +53,19 @@ public class WakeupReceiver extends BroadcastReceiver {
 			context.startActivity(i);
 
 			WakeupPlugin.sendWakeupResult(extras);
-			
+
 			if (extrasBundle != null && extrasBundle.getString("type") != null && extrasBundle.getString("type").equals("daylist")) {
 				// repeat in one week
 				Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
 				Log.d(LOG_TAG, "resetting alarm at " + sdf.format(next));
-	
+
 				Intent reschedule = new Intent(context, WakeupReceiver.class);
 				if (extras!=null) {
 					reschedule.putExtra("extra", intent.getExtras().get("extra").toString());
 				}
+
 				reschedule.putExtra("day", WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")));
-	
+
 				PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent, PendingIntent.FLAG_UPDATE_CURRENT);
 				AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
