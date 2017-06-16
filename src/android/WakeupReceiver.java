@@ -30,16 +30,16 @@ public class WakeupReceiver extends BroadcastReceiver {
 		try {
 			String packageName = context.getPackageName();
 			Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
-			String className = launchIntent.getComponent().getClassName();		    	
+			String className = launchIntent.getComponent().getClassName();
 			Log.d(LOG_TAG, "launching activity for class " + className);
 
 			@SuppressWarnings("rawtypes")
-			Class c = Class.forName(className); 
+			Class c = Class.forName(className);
 
 			Intent i = new Intent(context, c);
 			i.putExtra("wakeup", true);
 			Bundle extrasBundle = intent.getExtras();
-			String extras=null;
+			String extras = null;
 
 			if (extrasBundle != null && extrasBundle.get("extra") != null) {
 				extras = extrasBundle.get("extra").toString();
@@ -60,7 +60,7 @@ public class WakeupReceiver extends BroadcastReceiver {
 				Log.d(LOG_TAG, "resetting alarm at " + sdf.format(next));
 
 				Intent reschedule = new Intent(context, WakeupReceiver.class);
-				if (extras!=null) {
+				if (extras != null) {
 					reschedule.putExtra("extra", intent.getExtras().get("extra").toString());
 				}
 

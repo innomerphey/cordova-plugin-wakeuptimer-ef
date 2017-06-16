@@ -61,7 +61,7 @@ public class WakeupPlugin extends CordovaPlugin {
 		Bundle extras = cordova.getActivity().getIntent().getExtras();
 
 		if (extras != null && !extras.getBoolean("wakeup", false)) {
-			setAlarmsFromPrefs( cordova.getActivity().getApplicationContext() );
+			setAlarmsFromPrefs(cordova.getActivity().getApplicationContext());
 		}
 	}
 
@@ -74,10 +74,10 @@ public class WakeupPlugin extends CordovaPlugin {
 	@Override
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 		try {
-			if(action.equalsIgnoreCase("bind")) {
+			if (action.equalsIgnoreCase("bind")) {
 				connectionCallbackContext = callbackContext;
 
-				if(pendingWakeupResult != null) {
+				if (pendingWakeupResult != null) {
 					sendWakeupResult(pendingWakeupResult);
 					pendingWakeupResult = null;
 				}
@@ -85,7 +85,7 @@ public class WakeupPlugin extends CordovaPlugin {
 				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
 				pluginResult.setKeepCallback(true);
 				WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);
-			} else if(action.equalsIgnoreCase("wakeup")) {
+			} else if (action.equalsIgnoreCase("wakeup")) {
 				JSONObject options = args.getJSONObject(0);
 
 				JSONArray alarms;
@@ -99,7 +99,7 @@ public class WakeupPlugin extends CordovaPlugin {
 				setAlarms(cordova.getActivity().getApplicationContext(), alarms, true);
 
 				callbackContext.success();
-			} else if(action.equalsIgnoreCase("snooze")) {
+			} else if (action.equalsIgnoreCase("snooze")) {
 				JSONObject options = args.getJSONObject(0);
 
 				if (options.has("alarms")) {
@@ -125,7 +125,7 @@ public class WakeupPlugin extends CordovaPlugin {
 	}
 
 	public static void sendWakeupResult(String extras) {
-		if(WakeupPlugin.connectionCallbackContext != null) {
+		if (WakeupPlugin.connectionCallbackContext != null) {
 			JSONObject o = new JSONObject();
 
 			try {
@@ -166,15 +166,15 @@ public class WakeupPlugin extends CordovaPlugin {
 			cancelAlarms(context);
 		}
 
-		for(int i = 0; i < alarms.length(); i++){
+		for (int i = 0; i < alarms.length(); i++) {
 			JSONObject alarm = alarms.getJSONObject(i);
 			String type = "onetime";
 
-			if (alarm.has("type")){
+			if (alarm.has("type")) {
 				type = alarm.getString("type");
 			}
 
-			if (!alarm.has("time")){
+			if (!alarm.has("time")) {
 				throw new JSONException("alarm missing time: " + alarm.toString());
 			}
 
@@ -184,7 +184,7 @@ public class WakeupPlugin extends CordovaPlugin {
 				Calendar alarmDate = getOneTimeAlarmDate(time);
 				Intent intent = new Intent(context, WakeupReceiver.class);
 
-				if(alarm.has("extra")){
+				if (alarm.has("extra")) {
 					intent.putExtra("extra", alarm.getJSONObject("extra").toString());
 					intent.putExtra("type", type);
 				}
@@ -193,11 +193,11 @@ public class WakeupPlugin extends CordovaPlugin {
 			} else if (type.equals("daylist")) {
 				JSONArray days = alarm.getJSONArray("days");
 
-				for (int j = 0; j < days.length(); j++){
+				for (int j = 0; j < days.length(); j++) {
 					Calendar alarmDate = getAlarmDate(time, daysOfWeek.get(days.getString(j)));
 					Intent intent = new Intent(context, WakeupReceiver.class);
 
-					if(alarm.has("extra")){
+					if (alarm.has("extra")) {
 						intent.putExtra("extra", alarm.getJSONObject("extra").toString());
 						intent.putExtra("type", type);
 						intent.putExtra("time", time.toString());
@@ -211,7 +211,7 @@ public class WakeupPlugin extends CordovaPlugin {
 				Calendar alarmDate = getTimeFromNow(time);
 				Intent intent = new Intent(context, WakeupReceiver.class);
 
-				if(alarm.has("extra")){
+				if (alarm.has("extra")) {
 					intent.putExtra("extra", alarm.getJSONObject("extra").toString());
 					intent.putExtra("type", type);
 				}
@@ -222,7 +222,7 @@ public class WakeupPlugin extends CordovaPlugin {
 	}
 
 	private static void setNotification(Context context, String type, Calendar alarmDate, Intent intent, int id) throws JSONException{
-		if(alarmDate != null){
+		if (alarmDate != null) {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			Log.d(LOG_TAG,"setting alarm at " + sdf.format(alarmDate.getTime()) + "; id " + id);
 
@@ -236,7 +236,7 @@ public class WakeupPlugin extends CordovaPlugin {
 				alarmManager.set(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
 			}
 
-			if(WakeupPlugin.connectionCallbackContext!=null) {
+			if (WakeupPlugin.connectionCallbackContext!=null) {
 				JSONObject o = new JSONObject();
 				o.put("type", "set");
 				o.put("alarm_type", type);
@@ -246,12 +246,12 @@ public class WakeupPlugin extends CordovaPlugin {
 
 				PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
 				pluginResult.setKeepCallback(true);
-				WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);  
+				WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);
 			}
 		}
 	}
 
-	private static void cancelAlarms(Context context){
+	private static void cancelAlarms(Context context) {
 		Log.d(LOG_TAG, "canceling alarms");
 		Intent intent = new Intent(context, WakeupReceiver.class);
 		PendingIntent sender = PendingIntent.getBroadcast(context, ID_ONETIME_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -261,7 +261,7 @@ public class WakeupPlugin extends CordovaPlugin {
 
 		cancelSnooze(context);
 
-		for (int i=0;i<7;i++){
+		for (int i = 0; i < 7; i++) {
 			intent = new Intent(context, WakeupReceiver.class);
 			Log.d(LOG_TAG, "cancelling alarm id " + (ID_DAYLIST_OFFSET+i));
 			sender = PendingIntent.getBroadcast(context, ID_DAYLIST_OFFSET + i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -269,7 +269,7 @@ public class WakeupPlugin extends CordovaPlugin {
 		}
 	}
 
-	private static void cancelSnooze(Context context){
+	private static void cancelSnooze(Context context) {
 		Log.d(LOG_TAG, "canceling snooze");
 		Intent intent = new Intent(context, WakeupReceiver.class);
 		PendingIntent sender = PendingIntent.getBroadcast(context, ID_SNOOZE_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -280,7 +280,7 @@ public class WakeupPlugin extends CordovaPlugin {
 		alarmManager.cancel(sender);
 	}
 
-	private static Calendar getOneTimeAlarmDate( JSONObject time) throws JSONException {
+	private static Calendar getOneTimeAlarmDate(JSONObject time) throws JSONException {
 		TimeZone defaultz = TimeZone.getDefault();
 		Calendar calendar = new GregorianCalendar(defaultz);
 		Calendar now = new GregorianCalendar(defaultz);
@@ -291,23 +291,23 @@ public class WakeupPlugin extends CordovaPlugin {
 		int hour = (time.has("hour")) ? time.getInt("hour") : -1;
 		int minute = (time.has("minute")) ? time.getInt("minute") : 0;
 
-		if(hour >= 0){
+		if (hour >= 0) {
 			calendar.set(Calendar.HOUR_OF_DAY, hour);
 			calendar.set(Calendar.MINUTE, minute);
 			calendar.set(Calendar.SECOND, 0);
 			calendar.set(Calendar.MILLISECOND,0);
 
-			if (calendar.before(now)){
+			if (calendar.before(now)) {
 				calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) + 1);
 			}
-		}else{
+		} else {
 			calendar = null;
 		}
 
 		return calendar;
 	}
 
-	private static Calendar getAlarmDate( JSONObject time, int dayOfWeek) throws JSONException {
+	private static Calendar getAlarmDate(JSONObject time, int dayOfWeek) throws JSONException {
 		TimeZone defaultz = TimeZone.getDefault();
 		Calendar calendar = new GregorianCalendar(defaultz);
 		Calendar now = new GregorianCalendar(defaultz);
@@ -317,50 +317,50 @@ public class WakeupPlugin extends CordovaPlugin {
 		int hour = (time.has("hour")) ? time.getInt("hour") : -1;
 		int minute = (time.has("minute")) ? time.getInt("minute") : 0;
 
-		if(hour >= 0){
+		if (hour >= 0) {
 			calendar.set(Calendar.HOUR_OF_DAY, hour);
 			calendar.set(Calendar.MINUTE, minute);
 			calendar.set(Calendar.SECOND, 0);
 			calendar.set(Calendar.MILLISECOND,0);
 
-			int currentDayOfWeek=calendar.get(Calendar.DAY_OF_WEEK); // 1-7 = Sunday-Saturday
+			int currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK); // 1-7 = Sunday-Saturday
 			currentDayOfWeek--; // make zero-based
 
 			// add number of days until 'dayOfWeek' occurs
 			int daysUntilAlarm = 0;
 
-			if(currentDayOfWeek > dayOfWeek){
+			if (currentDayOfWeek > dayOfWeek) {
 				// currentDayOfWeek=thursday (4); alarm=monday (1) -- add 4 days
 				daysUntilAlarm = (6 - currentDayOfWeek) + dayOfWeek + 1; // (days until the end of week) + dayOfWeek + 1
-			}else if(currentDayOfWeek < dayOfWeek){
+			} else if (currentDayOfWeek < dayOfWeek) {
 				// example: currentDayOfWeek=monday (1); dayOfWeek=thursday (4) -- add three days
 				daysUntilAlarm = dayOfWeek - currentDayOfWeek;
-			}else{
-				if(now.after(calendar)){
+			} else {
+				if (now.after(calendar)) {
 					daysUntilAlarm = 7;
-				}else{
+				} else {
 					daysUntilAlarm = 0;
 				}
 			}
 
 			calendar.set(Calendar.DATE, now.get(Calendar.DATE) + daysUntilAlarm);
-		}else{
+		} else {
 			calendar = null;
 		}
 
 		return calendar;
 	}
 
-	private static Calendar getTimeFromNow( JSONObject time) throws JSONException {
+	private static Calendar getTimeFromNow(JSONObject time) throws JSONException {
 		TimeZone defaultz = TimeZone.getDefault();
 		Calendar calendar = new GregorianCalendar(defaultz);
 		calendar.setTime(new Date());
 
 		int seconds = (time.has("seconds")) ? time.getInt("seconds") : -1;
 
-		if(seconds >= 0){
+		if (seconds >= 0) {
 			calendar.add(Calendar.SECOND, seconds);
-		}else{
+		} else {
 			calendar = null;
 		}
 
