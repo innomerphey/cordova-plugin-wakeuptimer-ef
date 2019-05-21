@@ -3,14 +3,14 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-wakeuptimer-ef"
-    version="1.0.1">
+    version="1.0.2">
 
     <name>WakeupTimer</name>
     <description>Wakeup Plugin</description>
     <license>Apache 2.0</license>
     <keywords>sleep,wakeup,timer</keywords>
-    <repo>git@github.com:EltonFaust/cordova-plugin-wakeuptimer.git</repo>
-    <issue>https://github.com/EltonFaust/cordova-plugin-wakeuptimer/issues</issue>
+    <repo>git@github.com:EltonFaust/cordova-plugin-wakeuptimer-ef.git</repo>
+    <issue>https://github.com/EltonFaust/cordova-plugin-wakeuptimer-ef/issues</issue>
 
     <js-module src="www/wakeup.js" name="Wakeup">
         <clobbers target="wakeuptimer"/>
@@ -32,7 +32,7 @@
 
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <receiver android:name="org.nypr.cordova.wakeupplugin.WakeupReceiver" />
-            <receiver android:name="org.nypr.cordova.wakeupplugin.WakeupBootReceiver">  
+            <receiver android:name="org.nypr.cordova.wakeupplugin.WakeupBootReceiver">
                 <intent-filter>
                     <action android:name="android.intent.action.BOOT_COMPLETED" />
                 </intent-filter>

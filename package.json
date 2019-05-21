@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-wakeuptimer-ef",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Wakeup Plugin",
   "cordova": {
     "id": "cordova-plugin-wakeuptimer-ef",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/EltonFaust/cordova-plugin-wakeuptimer.git"
+    "url": "git+https://github.com/EltonFaust/cordova-plugin-wakeuptimer-ef.git"
   },
   "keywords": [
     "sleep",
@@ -22,7 +22,7 @@
   "author": "EltonFaust",
   "license": "Apache 2.0",
   "bugs": {
-    "url": "https://github.com/EltonFaust/cordova-plugin-wakeuptimer/issues"
+    "url": "https://github.com/EltonFaust/cordova-plugin-wakeuptimer-ef/issues"
   },
-  "homepage": "https://github.com/EltonFaust/cordova-plugin-wakeuptimer#readme"
+  "homepage": "https://github.com/EltonFaust/cordova-plugin-wakeuptimer-ef#readme"
 }
