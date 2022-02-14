@@ -22,7 +22,6 @@ static NSString * const kWakeupPluginJSONSecondsKey = @"seconds";
 static NSString * const kWakeupPluginJSONAlarmDateKey = @"alarm_date";
 
 static NSString * const kWakeupPluginJSONWakeupValue = @"wakeup";
-static NSString * const kWakeupPluginJSONSnoozeValue = @"snooze";
 static NSString * const kWakeupPluginJSONOneTimeValue = @"onetime";
 static NSString * const kWakeupPluginJSONDaylistValue = @"daylist";
 static NSString * const kWakeupPluginJSONSetValue = @"set";
@@ -87,23 +86,6 @@ static NSString * const kWakeupPluginAlarmSettingsFile = @"alarmsettings.plist";
     [self wup_saveToPrefs:alarms];
 
     [self wup_setAlarms:alarms cancelAlarms:true];
-
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [pluginResult setKeepCallbackAsBool:YES];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-}
-
-- (void)snooze:(CDVInvokedUrlCommand *)command
-{
-    CDVPluginResult* pluginResult = nil;
-    NSDictionary * options = [command.arguments objectAtIndex:0];
-    NSArray * alarms;
-
-    if ([options objectForKey:kWakeupPluginJSONAlarmsKey]) {
-        alarms = [options objectForKey:kWakeupPluginJSONAlarmsKey];
-        NSLog(@"scheduling snooze...");
-        [self wup_setAlarms:alarms cancelAlarms:false];
-    }
 
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [pluginResult setKeepCallbackAsBool:YES];
@@ -233,7 +215,7 @@ static NSString * const kWakeupPluginAlarmSettingsFile = @"alarmsettings.plist";
 
 - (void)wup_setAlarms:(NSArray *)alarms cancelAlarms:(BOOL)cancelAlarms
 {
-	BOOL backgroundSupported = [self wup_isBackgroundSupported];
+    BOOL backgroundSupported = [self wup_isBackgroundSupported];
 
     if (cancelAlarms) {
         [self wup_cancelAlarms];
@@ -265,10 +247,6 @@ static NSString * const kWakeupPluginAlarmSettingsFile = @"alarmsettings.plist";
                     NSDate * alarmDate = [self wup_getAlarmDate:time day:[self wup_dayOfWeekIndex:[days objectAtIndex:j]]];
                     [self wup_setNotification:type alarmDate:alarmDate extra:extra message:message action:action sound:sound repeatInterval:NSWeekCalendarUnit];
                 }
-            } else if ([type isEqualToString:kWakeupPluginJSONSnoozeValue]) {
-                [self wup_cancelSnooze];
-                NSDate * alarmDate = [self wup_getTimeFromNow:time];
-                [self wup_setNotification:type alarmDate:alarmDate extra:extra message:message action:action sound:sound repeatInterval:0];
             }
 
             NSLog(@"setting alarm...");
@@ -291,31 +269,16 @@ static NSString * const kWakeupPluginAlarmSettingsFile = @"alarmsettings.plist";
     }
 }
 
-- (void) wup_cancelSnooze
-{
-    UIApplication * app = [UIApplication sharedApplication];
-    NSArray *localNotifications = [app scheduledLocalNotifications];
-
-    for (UILocalNotification *not in localNotifications) {
-        NSString * type = [not.userInfo objectForKey:kWakeupPluginJSONAlarmTypeKey];
-
-        if (type && [type isEqualToString:kWakeupPluginJSONSnoozeValue]) {
-            NSLog(@"cancelling existing alarm notification");
-            [app cancelLocalNotification:not];
-        }
-    }
-}
-
 - (BOOL) wup_isBackgroundSupported
 {
-	UIDevice* device = [UIDevice currentDevice];
-	BOOL backgroundSupported = NO;
+    UIDevice* device = [UIDevice currentDevice];
+    BOOL backgroundSupported = NO;
 
-	if ([device respondsToSelector:@selector(isMultitaskingSupported)]) {
-		backgroundSupported = device.multitaskingSupported;
-	}
+    if ([device respondsToSelector:@selector(isMultitaskingSupported)]) {
+        backgroundSupported = device.multitaskingSupported;
+    }
 
-	return backgroundSupported;
+    return backgroundSupported;
 }
 
 - (NSDate*) wup_getOneTimeAlarmDate:(NSDictionary*)time
@@ -386,7 +349,7 @@ static NSString * const kWakeupPluginAlarmSettingsFile = @"alarmsettings.plist";
         alarmDate = [gregorian dateByAddingComponents:addDayComponents toDate:alarmDate options:0];
     }
 
-	return alarmDate;
+    return alarmDate;
 }
 
 - (NSDate*) wup_getTimeFromNow:(NSDictionary*)time
