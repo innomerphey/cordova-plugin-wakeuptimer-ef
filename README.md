@@ -57,8 +57,8 @@ window.wakeuptimer.wakeup(
             {
                 type: 'daylist',
                 time: { hour: 14, minute: 30 },
-                // list of week days
-                days: [ 'monday', 'tuesday', 'wednesday' ],
+                // list of week days ('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday')
+                days: [ 'monday', 'wednesday', 'friday' ],
                 extra: { message: 'json containing app-specific information to be posted when alarm triggers' },
             },
         ]
@@ -74,6 +74,10 @@ A: The Android system does't like to launch an app without any user interaction,
   but some manufactures like Xiaomi, allows the Auto Start, but its an manual action that can't be performed programatically,
   the method `checkAutoStartPrefs` allows you to verify if the user is using an device tha allows auto start,
   the method `openAutoStartPrefs` opens the app config so the user can enable the Auto Start option
+
+  * some brands (like Samsung), in newer devices doesn't allow auto start, but has some advanced battery resources that is required to allows
+    to start a service without user interaction, without that config enabled, even the streaming/ringtone may not initialize,
+    so in some devices, the `openAutoStartPrefs` will open the battery options instead
 */
 // check if the current device has an Auto Start preference
 window.wakeuptimer.checkAutoStartPrefs(
@@ -98,20 +102,25 @@ window.wakeuptimer.openAutoStartPrefs(
 
 /*
 The Android system, allows the startup of an Backgroud Service,
-  the `configure` method, allows you to configure a ringtone that will play if your app is closed and can't be automatically opened,
-  showing a notification with a stop button, if the user clicks on the notification, the app will be opened and trigger the normal `wakeup` event
-  * the ringtone and notification will be active for up to 2 minutes, after that, it will be ended automatically
-  * the ringtone can be obtained by the plugin
+  the `configure` method, allows you to configure a streaming/ringtone that will play once the alarm is triggered,
+  showing a notification with a stop button, if the user clicks on the notification, the app will be opened and will trigger the normal `wakeup` event
+
+  * the streaming/ringtone and notification will be active for up to 5 minutes, after that, it will be stopped automatically
+  * once the service is closed, it will trigger an 'stopped' event (can be catch by the 'bind' method)
+  * if both streaming and ringtone are configured, the streaming has a higher priority,
+    the ringtone will play only if the streaming can't be played
+    or the streaming stops unitentionally (can be a connection problem or the streaming ended)
+  * the ringtone url can be obtained by the plugin cordova-plugin-native-ringtones
 
 Optional dependencie:
   cordova plugin add https://github.com/EltonFaust/cordova-plugin-native-ringtones
     * this plugin return all device ringtones
 */
 
-// stop the current alarm
+// stop the current alarm, once it's stopped, it will trigger an 'stopped' event
 window.wakeuptimer.stop(function () {}, function (error) {});
 
-// configure startup notification
+// configure the startup notification
 window.wakeuptimer.configure(
     function () {
         console.log('wakeup startup service configured!');
@@ -132,18 +141,20 @@ window.wakeuptimer.configure(
         volume: 100,
         // Stream type (Optional, default: window.cordova.plugins.NativeRingtones.STREAM_ALARM)
         streamType: window.cordova.plugins.NativeRingtones.(STREAM_ALARM | STREAM_MUSIC),
-        // The text will be shown in the notication (Optional, default: %time%)
+        // The text that will be shown in the notication (Optional, default: %time%)
+        //   * the '%time%' will be replaced with the active alarm time,
+        //     with a format 'h:mm a' when configured a 12h clock, and a format "HH:mm" to a 24h clock
         notificationText: "Wakeup it's %time%",
     }
 );
 
 // Eg.: Simple config, obtaining the available ringtones with `cordova-plugin-native-ringtones` and configuring the first ringtone:
 window.cordova.plugins.NativeRingtones.getRingtone(
-    (ringtones /*Array<{ Name: string, Url: string }>*/) => {
+    (nativeRingtones /*Array<{ Name: string, Url: string }>*/) => {
         window.wakeuptimer.configure(
             function () { }, function (error) { },
             {
-                ringtone: ringtone[0].Url,
+                ringtone: nativeRingtones[0].Url,
             }
         );
     },
