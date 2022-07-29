@@ -26,7 +26,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.R;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 import android.text.format.DateFormat;
 import android.util.Log;
 import java.io.IOException;
@@ -252,7 +252,10 @@ public class WakeupStartService extends Service {
                 notifyIntent.putExtra("extra", this.extrasBundleContent);
             }
 
-            PendingIntent notifyPendingIntent = PendingIntent.getActivity(context, 0, notifyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent notifyPendingIntent = PendingIntent.getActivity(
+                context, 0, notifyIntent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+            );
             this.notificationBuilder.setContentIntent(notifyPendingIntent);
         } catch (ClassNotFoundException e) {
             log("Can't initialize activity class");
@@ -378,7 +381,7 @@ public class WakeupStartService extends Service {
 
         // intent responsible for stop service
         Intent dismissIntent = new Intent("wakeup-notificaion-destroy");
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 1, dismissIntent, 0);
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 1, dismissIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
 
         // add action on dismiss notification
         this.notificationBuilder.setDeleteIntent(dismissPendingIntent);
@@ -386,7 +389,6 @@ public class WakeupStartService extends Service {
         // add an close button on notification
         Notification.Action.Builder actionDismissBuilder = new Notification.Action.Builder(
             android.R.drawable.ic_menu_close_clear_cancel, "", dismissPendingIntent
-            // context.getResources().getIdentifier("ic_media_pause", "drawable", context.getPackageName()), "", dismissPendingIntent
         );
         this.notificationBuilder.addAction(actionDismissBuilder.build());
 

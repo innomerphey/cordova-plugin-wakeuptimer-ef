@@ -330,7 +330,10 @@ public class WakeupPlugin extends CordovaPlugin {
             log("Setting alarm at " + sdf.format(alarmDate.getTime()) + "; id " + id);
 
             intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent sender = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            PendingIntent sender = PendingIntent.getBroadcast(
+                context, id, intent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+            );
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -362,7 +365,10 @@ public class WakeupPlugin extends CordovaPlugin {
     private static void cancelAlarms(Context context) {
         log("Canceling alarms");
         Intent intent = new Intent(context, WakeupReceiver.class);
-        PendingIntent sender = PendingIntent.getBroadcast(context, ID_ONETIME_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent sender = PendingIntent.getBroadcast(
+            context, ID_ONETIME_OFFSET, intent,
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+        );
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         log("Cancelling alarm id " + ID_ONETIME_OFFSET);
         alarmManager.cancel(sender);
@@ -370,7 +376,10 @@ public class WakeupPlugin extends CordovaPlugin {
         for (int i = 0; i < 7; i++) {
             intent = new Intent(context, WakeupReceiver.class);
             log("Cancelling alarm id " + (ID_DAYLIST_OFFSET+i));
-            sender = PendingIntent.getBroadcast(context, ID_DAYLIST_OFFSET + i, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+            sender = PendingIntent.getBroadcast(
+                context, ID_DAYLIST_OFFSET + i, intent,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+            );
             alarmManager.cancel(sender);
         }
     }

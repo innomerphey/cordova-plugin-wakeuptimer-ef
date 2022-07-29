@@ -129,7 +129,7 @@ window.wakeuptimer.configure(
     {
         // at least one of `streamingUrl` or `ringtone` is required`;
         // when set the `streamingUrl`, if the user is not on wifi and the `streamingOnlyWifi` is set,
-        // or the streaming fails, it will fallback to the `ringtone`` if is set
+        // or the streaming fails, it will fallback to the `ringtone` if is set
 
         // play a streaming on wakeup
         streamingUrl: 'http://hayatmix.net/;yayin.mp3.m3u',

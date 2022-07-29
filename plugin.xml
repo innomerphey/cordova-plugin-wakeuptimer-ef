@@ -3,7 +3,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-wakeuptimer-ef"
-    version="1.0.3">
+    version="1.0.4">
 
     <name>WakeupTimer</name>
     <description>Wakeup Plugin</description>
@@ -44,7 +44,7 @@
 
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <receiver android:name="com.eltonfaust.wakeupplugin.WakeupReceiver" />
-            <receiver android:name="com.eltonfaust.wakeupplugin.WakeupBootReceiver" android:enabled="false">
+            <receiver android:name="com.eltonfaust.wakeupplugin.WakeupBootReceiver" android:enabled="false" android:exported="true">
                 <intent-filter>
                     <action android:name="android.intent.action.BOOT_COMPLETED" />
                 </intent-filter>
