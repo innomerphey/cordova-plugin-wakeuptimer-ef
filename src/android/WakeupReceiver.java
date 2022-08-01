@@ -99,7 +99,7 @@ public class WakeupReceiver extends BroadcastReceiver {
 
             PendingIntent sender = PendingIntent.getBroadcast(
                 context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
             );
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 

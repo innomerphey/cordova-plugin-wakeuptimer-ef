@@ -254,7 +254,7 @@ public class WakeupStartService extends Service {
 
             PendingIntent notifyPendingIntent = PendingIntent.getActivity(
                 context, 0, notifyIntent,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
             );
             this.notificationBuilder.setContentIntent(notifyPendingIntent);
         } catch (ClassNotFoundException e) {
@@ -381,7 +381,7 @@ public class WakeupStartService extends Service {
 
         // intent responsible for stop service
         Intent dismissIntent = new Intent("wakeup-notificaion-destroy");
-        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 1, dismissIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
+        PendingIntent dismissPendingIntent = PendingIntent.getBroadcast(context, 1, dismissIntent, Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0);
 
         // add action on dismiss notification
         this.notificationBuilder.setDeleteIntent(dismissPendingIntent);
