@@ -2,7 +2,14 @@ package com.eltonfaust.wakeupplugin;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
+import org.json.JSONObject;
+import org.apache.cordova.PluginResult;
+import org.json.JSONException;
+
+import android.app.ActivityManager;
+import android.os.PowerManager;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -19,18 +26,52 @@ public class WakeupReceiver extends BroadcastReceiver {
 
     private static final String LOG_TAG = "WakeupReceiver";
 
-    @SuppressLint({ "SimpleDateFormat", "NewApi" })
+    public boolean isRunning(Context ctx) {
+        ActivityManager activityManager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningTaskInfo> tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
+
+        for (ActivityManager.RunningTaskInfo task : tasks) {
+            if (ctx.getPackageName().equalsIgnoreCase(task.baseActivity.getPackageName())) {
+                if (task.numRunning > 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @SuppressLint({"SimpleDateFormat", "NewApi"})
     @Override
     public void onReceive(Context context, Intent intent) {
+        String extras = null;
         long now = new Date().getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
         log("Wakeuptimer expired at " + sdf.format(now));
 
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-
         Bundle extrasBundle = intent.getExtras();
-        String extras = null;
+
+        if (extrasBundle != null && extrasBundle.get("skipOnAwake") != null) {
+            if (extrasBundle.get("skipOnAwake").equals(true)) {
+                PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                boolean isScreenAwake = (Build.VERSION.SDK_INT < 20 ? powerManager.isScreenOn() : powerManager.isInteractive());
+
+                if (isScreenAwake) {
+                    Log.d(LOG_TAG, "screen is awake. Postponing launch.");
+                    return;
+                }
+            }
+        }
+
+        if (extrasBundle != null && extrasBundle.get("skipOnRunning") != null) {
+            if (extrasBundle.get("skipOnRunning").equals(true)) {
+                if (isRunning(context)) {
+                    Log.d(LOG_TAG, "app is already running. No need to launch");
+                    return;
+                }
+            }
+        }
 
         if (extrasBundle != null && extrasBundle.get("extra") != null) {
             extras = extrasBundle.get("extra").toString();
@@ -39,7 +80,7 @@ public class WakeupReceiver extends BroadcastReceiver {
         // check if some ringtone is configured
         if (
             preferences.getString("alarms_streaming_url", null) != null
-            || preferences.getString("alarms_ringtone", null) != null
+                || preferences.getString("alarms_ringtone", null) != null
         ) {
             log("Launching service for wakeup fallback");
             Intent serviceIntent = new Intent(context, WakeupStartService.class);
@@ -61,6 +102,8 @@ public class WakeupReceiver extends BroadcastReceiver {
 
         String packageName = context.getPackageName();
         Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+        launchIntent.putExtra("cdvStartInBackground", true);
+
         String className = launchIntent.getComponent().getClassName();
         log("Launching activity for class " + className);
 
@@ -73,11 +116,53 @@ public class WakeupReceiver extends BroadcastReceiver {
             activityIntent.putExtra("wakeup", intent.getBooleanExtra("wakeup", true));
             activityIntent.putExtra("triggerAt", now);
 
+            if (extrasBundle != null && extrasBundle.get("startInBackground") != null) {
+                if (extrasBundle.get("startInBackground").equals(true)) {
+                    Log.d(LOG_TAG, "starting app in background");
+                    activityIntent.putExtra("cdvStartInBackground", true);
+                }
+            }
+
             if (extras != null) {
                 activityIntent.putExtra("extra", extras);
             }
 
             context.startActivity(activityIntent);
+            if (WakeupPlugin.connectionCallbackContext != null) {
+                JSONObject o = new JSONObject();
+                o.put("type", "wakeup");
+                if (extras != null) {
+                    o.put("extra", extras);
+                }
+                o.put("cdvStartInBackground", true);
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
+                pluginResult.setKeepCallback(true);
+                WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);
+            }
+
+            if (extrasBundle != null && extrasBundle.getString("type") != null && extrasBundle.getString("type").equals("daylist")) {
+                // repeat in one week
+                Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
+                Log.d(LOG_TAG, "resetting alarm at " + sdf.format(next));
+                Intent reschedule = new Intent(context, WakeupReceiver.class);
+                if (extras != null) {
+                    reschedule.putExtra("extra", intent.getExtras().get("extra").toString());
+                }
+                reschedule.putExtra("day", WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")));
+                reschedule.putExtra("cdvStartInBackground", true);
+
+                PendingIntent sender = PendingIntent.getBroadcast(context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+                if (Build.VERSION.SDK_INT >= 19) {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
+                } else {
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, next.getTime(), sender);
+                }
+            }
+
+
+        } catch (JSONException e) {
+            e.printStackTrace();
         } catch (ClassNotFoundException e) {
             log("Can't initialize activity class, shuting down service");
         }

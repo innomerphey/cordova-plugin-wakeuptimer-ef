@@ -3,7 +3,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android"
     id="cordova-plugin-wakeuptimer-ef"
-    version="1.0.4">
+    version="1.1.0">
 
     <name>WakeupTimer</name>
     <description>Wakeup Plugin</description>
@@ -56,18 +56,5 @@
         <source-file src="src/android/WakeupBootReceiver.java" target-dir="src/com/eltonfaust/wakeupplugin/" />
         <source-file src="src/android/WakeupStartService.java" target-dir="src/com/eltonfaust/wakeupplugin/" />
         <source-file src="src/android/WakeupAutoStartHelper.java" target-dir="src/com/eltonfaust/wakeupplugin/" />
-    </platform>
-
-    <!-- ios -->
-    <platform name="ios">
-        <config-file target="config.xml" parent="/*">
-            <feature name="WakeupPlugin">
-                <param name="ios-package" value="WakeupPlugin"/>
-                <param name="onload" value="true" />
-            </feature>
-        </config-file>
-
-        <header-file src="src/ios/WakeupPlugin.h" />
-        <source-file src="src/ios/WakeupPlugin.m" />
     </platform>
 </plugin>
