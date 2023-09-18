@@ -2,7 +2,7 @@ var exec = require("cordova/exec");
 
 /**
  * This is a global variable called wakeup exposed by cordova
- */    
+ */
 var Wakeup = (function (){
     function Wakeup() {
         // https://developer.android.com/reference/android/media/AudioManager.html
@@ -24,6 +24,22 @@ var Wakeup = (function (){
 
     Wakeup.prototype.openAutoStartPrefs = function (success, error) {
         exec(success, error, "WakeupPlugin", "openAutoStartPrefs", []);
+    };
+
+    Wakeup.prototype.checkNotificationPerm = function (success, error) {
+         exec(success, error, "WakeupPlugin", "checkNotificationPerm", []);
+    };
+
+    Wakeup.prototype.shouldRequestNotificationPermRat = function (success, error) {
+         exec(success, error, "WakeupPlugin", "shouldRequestNotificationPermRat", []);
+    };
+
+    Wakeup.prototype.requestNotificationPerm = function (success, error) {
+         exec(success, error, "WakeupPlugin", "requestNotificationPerm", []);
+    };
+
+    Wakeup.prototype.openAppNotificationSettings = function (success, error) {
+         exec(success, error, "WakeupPlugin", "openAppNotificationSettings", []);
     };
 
     Wakeup.prototype.wakeup = function (success, error, options) {
