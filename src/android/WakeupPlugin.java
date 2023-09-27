@@ -332,8 +332,8 @@ public class WakeupPlugin extends CordovaPlugin {
 
             log("Setting alarms:\n" + serializedAlarms);
 
-            JSONArray alarms = new JSONArray(serializedAlarms);
-            WakeupPlugin.setAlarms(context, alarms, true);
+//            JSONArray alarms = new JSONArray(serializedAlarms);
+//            WakeupPlugin.setAlarms(context, alarms, true);
             return new JSONArray(serializedAlarms);
         } catch (JSONException e) {
             e.printStackTrace();
