@@ -27,19 +27,27 @@ var Wakeup = (function (){
     };
 
     Wakeup.prototype.checkNotificationPerm = function (success, error) {
-         exec(success, error, "WakeupPlugin", "checkNotificationPerm", []);
+        exec(success, error, "WakeupPlugin", "checkNotificationPerm", []);
     };
 
     Wakeup.prototype.shouldRequestNotificationPermRat = function (success, error) {
-         exec(success, error, "WakeupPlugin", "shouldRequestNotificationPermRat", []);
+        exec(success, error, "WakeupPlugin", "shouldRequestNotificationPermRat", []);
     };
 
     Wakeup.prototype.requestNotificationPerm = function (success, error) {
-         exec(success, error, "WakeupPlugin", "requestNotificationPerm", []);
+        exec(success, error, "WakeupPlugin", "requestNotificationPerm", []);
     };
 
     Wakeup.prototype.openAppNotificationSettings = function (success, error) {
-         exec(success, error, "WakeupPlugin", "openAppNotificationSettings", []);
+        exec(success, error, "WakeupPlugin", "openAppNotificationSettings", []);
+    };
+
+    Wakeup.prototype.checkAlarmPerm = function (success, error) {
+        exec(success, error, "WakeupPlugin", "checkAlarmPerm", []);
+    };
+
+    Wakeup.prototype.openAppAlarmSettings = function (success, error) {
+        exec(success, error, "WakeupPlugin", "openAppAlarmSettings", []);
     };
 
     Wakeup.prototype.wakeup = function (success, error, options) {
@@ -52,6 +60,5 @@ var Wakeup = (function (){
 
     return new Wakeup();
 })();
-
 
 module.exports = Wakeup;

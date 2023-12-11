@@ -2,15 +2,7 @@ package com.eltonfaust.wakeupplugin;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
-import org.json.JSONObject;
-import org.apache.cordova.PluginResult;
-import org.json.JSONException;
-
-import android.app.ActivityManager;
-import android.os.PowerManager;
-import android.os.AsyncTask;
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -27,26 +19,29 @@ public class WakeupReceiver extends BroadcastReceiver {
 
     private static final String LOG_TAG = "WakeupReceiver";
 
-    public boolean isRunning(Context ctx) {
-        ActivityManager activityManager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningTaskInfo> tasks = activityManager.getRunningTasks(Integer.MAX_VALUE);
+    @SuppressLint({"SimpleDateFormat", "NewApi"})
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        long now = new Date().getTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        for (ActivityManager.RunningTaskInfo task : tasks) {
-            if (ctx.getPackageName().equalsIgnoreCase(task.baseActivity.getPackageName())) {
-                if (task.numRunning > 0) {
-                    return true;
-                }
-            }
+        log("Wakeuptimer expired at " + sdf.format(now));
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
+        Bundle extrasBundle = intent.getExtras();
+        String extras = null;
+
+        if (extrasBundle != null && extrasBundle.get("extra") != null) {
+            extras = extrasBundle.get("extra").toString();
         }
 
-        return false;
-    }
-    private void launchWakeupService(Context context, String extras) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        String alarmsStreamingUrl = preferences.getString("alarms_streaming_url", null);
-        String alarmsRingtone = preferences.getString("alarms_ringtone", null);
-
-        if (alarmsStreamingUrl != null || alarmsRingtone != null) {
+        // check if some ringtone is configured
+        if (
+            preferences.getString("alarms_streaming_url", null) != null
+                || preferences.getString("alarms_ringtone", null) != null
+        ) {
+            log("Launching service for wakeup fallback");
             Intent serviceIntent = new Intent(context, WakeupStartService.class);
 
             if (extras != null) {
@@ -60,16 +55,14 @@ public class WakeupReceiver extends BroadcastReceiver {
             } else {
                 context.startService(serviceIntent);
             }
+        } else {
+            log("Can't lauch wakeup fallback service, not configured");
         }
-    }
 
-    private void launchApp(Context context, Intent intent, String extras, long now) {
-        Bundle extrasBundle = intent.getExtras();
         String packageName = context.getPackageName();
         Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
-        launchIntent.putExtra("cdvStartInBackground", true);
-
         String className = launchIntent.getComponent().getClassName();
+        log("Launching activity for class " + className);
 
         try {
             @SuppressWarnings("rawtypes")
@@ -80,37 +73,21 @@ public class WakeupReceiver extends BroadcastReceiver {
             activityIntent.putExtra("wakeup", intent.getBooleanExtra("wakeup", true));
             activityIntent.putExtra("triggerAt", now);
 
-            if (extrasBundle != null && extrasBundle.get("startInBackground") != null && (boolean) extrasBundle.get("startInBackground")) {
-                activityIntent.putExtra("cdvStartInBackground", true);
-            }
-
             if (extras != null) {
                 activityIntent.putExtra("extra", extras);
             }
 
             context.startActivity(activityIntent);
-
-            if (WakeupPlugin.connectionCallbackContext != null) {
-                JSONObject o = new JSONObject();
-                o.put("type", "wakeup");
-                if (extras != null) {
-                    o.put("extra", extras);
-                }
-                o.put("cdvStartInBackground", true);
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
-                pluginResult.setKeepCallback(true);
-                WakeupPlugin.connectionCallbackContext.sendPluginResult(pluginResult);
-            }
-        } catch (JSONException | ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            log("Can't initialize activity class, shuting down service");
         }
-    }
 
-    private void afterLaunchActions(Context context, Intent intent, String extras) {
-        Bundle extrasBundle = intent.getExtras();
+        WakeupPlugin.sendWakeupResult(extras);
 
         if (extrasBundle != null && extrasBundle.getString("type") != null && extrasBundle.getString("type").equals("daylist")) {
+            // repeat in one week
             Date next = new Date(new Date().getTime() + (7 * 24 * 60 * 60 * 1000));
+            log("Resetting alarm at " + sdf.format(next));
 
             Intent reschedule = new Intent(context, WakeupReceiver.class);
 
@@ -119,7 +96,6 @@ public class WakeupReceiver extends BroadcastReceiver {
             }
 
             reschedule.putExtra("day", WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")));
-            reschedule.putExtra("cdvStartInBackground", true);
 
             PendingIntent sender = PendingIntent.getBroadcast(
                 context, 19999 + WakeupPlugin.daysOfWeek.get(intent.getExtras().get("day")), intent,
@@ -140,30 +116,7 @@ public class WakeupReceiver extends BroadcastReceiver {
         }
     }
 
-    private String extras;
-
-    @Override
-    public void onReceive(final Context context, final Intent intent) {
-
-        long now = new Date().getTime();
-
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-                Bundle extrasBundle = intent.getExtras();
-                if (extrasBundle != null && extrasBundle.get("extra") != null) {
-                    extras = extrasBundle.get("extra").toString();
-                }
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void aVoid) {
-                launchWakeupService(context, extras);
-                launchApp(context, intent, extras, now);
-                afterLaunchActions(context, intent, extras);
-            }
-        }.execute();
+    private void log(String log) {
+        Log.d(LOG_TAG, log);
     }
 }

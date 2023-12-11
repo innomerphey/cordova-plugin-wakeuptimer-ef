@@ -543,18 +543,18 @@ public class WakeupStartService extends Service {
                 && networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
                 && networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)
                 && (
-                    networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
                     || networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-                );
+            );
         } else {
             NetworkInfo networkInfo = cm.getActiveNetworkInfo();
 
             return networkInfo != null
                 && networkInfo.isConnected()
                 && (
-                    networkInfo.getType() == ConnectivityManager.TYPE_WIFI
+                networkInfo.getType() == ConnectivityManager.TYPE_WIFI
                     || networkInfo.getType() == ConnectivityManager.TYPE_ETHERNET
-                );
+            );
         }
     }
 

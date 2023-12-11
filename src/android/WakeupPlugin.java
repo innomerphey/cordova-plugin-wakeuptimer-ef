@@ -1,6 +1,5 @@
 package com.eltonfaust.wakeupplugin;
 
-import java.util.concurrent.TimeUnit;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -8,10 +7,7 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-
 import android.net.Uri;
-
-import java.util.concurrent.TimeUnit;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -45,18 +41,16 @@ public class WakeupPlugin extends CordovaPlugin {
 
     private static final int ID_DAYLIST_OFFSET = 10010;
     private static final int ID_ONETIME_OFFSET = 10000;
-    protected static final int ID_REPEAT_OFFSET = 10011;
-    protected static final int ID_SNOOZE_OFFSET = 10001;
     private static final int ID_SEQUENTIAL_OFFSET = 10020;
     private static final int ID_PERMISSION_REQUEST_CODE = 684981;
 
-    public static CallbackContext connectionCallbackContext = null;
+    private static CallbackContext connectionCallbackContext = null;
     private static String pendingWakeupResult = null;
+
     private static CallbackContext notificatioPermCallback;
 
     public static Map<String, Integer> daysOfWeek = new HashMap<String, Integer>() {
         private static final long serialVersionUID = 1L;
-
         {
             put("sunday", 0);
             put("monday", 1);
@@ -67,17 +61,6 @@ public class WakeupPlugin extends CordovaPlugin {
             put("saturday", 6);
         }
     };
-
-    @Override
-    public void onReset() {
-        // app startup
-        Log.d(LOG_TAG, "Wakeup Plugin onReset");
-        Bundle extras = cordova.getActivity().getIntent().getExtras();
-        if (extras != null && !extras.getBoolean("wakeup", false)) {
-            setAlarmsFromPrefs(cordova.getActivity().getApplicationContext());
-        }
-        super.onReset();
-    }
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
@@ -114,17 +97,6 @@ public class WakeupPlugin extends CordovaPlugin {
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK);
                 pluginResult.setKeepCallback(true);
                 connectionCallbackContext.sendPluginResult(pluginResult);
-            } else if (action.equals("checkNotificationPerm")) {
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, hasNotificationPermission());
-                callbackContext.sendPluginResult(pluginResult);
-            } else if (action.equals("shouldRequestNotificationPermRat")) {
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, shouldRequestNotificationPermissionRationale());
-                callbackContext.sendPluginResult(pluginResult);
-            } else if (action.equals("requestNotificationPerm")) {
-                requestNotificationPermission(callbackContext);
-            } else if (action.equals("openAppNotificationSettings")) {
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, openAppNotificationSettings());
-                callbackContext.sendPluginResult(pluginResult);
             } else if (action.equals("configure")) {
                 // save the new configs to preferences
                 saveOptionsToPrefs(cordova.getActivity().getApplicationContext(), args.getJSONObject(0));
@@ -139,6 +111,23 @@ public class WakeupPlugin extends CordovaPlugin {
                 boolean openedPreferences = WakeupAutoStartHelper.getInstance().openAutoStartPreferences(cordova.getContext());
                 PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, openedPreferences);
                 callbackContext.sendPluginResult(pluginResult);
+            } else if (action.equals("checkNotificationPerm")) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, hasNotificationPermission());
+                callbackContext.sendPluginResult(pluginResult);
+            } else if (action.equals("shouldRequestNotificationPermRat")) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, shouldRequestNotificationPermissionRationale());
+                callbackContext.sendPluginResult(pluginResult);
+            } else if (action.equals("requestNotificationPerm")) {
+                requestNotificationPermission(callbackContext);
+            } else if (action.equals("openAppNotificationSettings")) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, openAppNotificationSettings());
+                callbackContext.sendPluginResult(pluginResult);
+            } else if (action.equals("checkAlarmPerm")) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, hasExactAlarmPermission());
+                callbackContext.sendPluginResult(pluginResult);
+            } else if (action.equals("openAppAlarmSettings")) {
+                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, openAppAlarmSettings());
+                callbackContext.sendPluginResult(pluginResult);
             } else if (action.equals("wakeup")) {
                 cleaPendingWakeupResult();
 
@@ -151,11 +140,16 @@ public class WakeupPlugin extends CordovaPlugin {
                 } else {
                     alarms = new JSONArray(); // default to empty array
                 }
-                cancelAlarms(content);
-                saveAlarmsToPrefs(content, alarms);
-                setAlarms(content, alarms, false);
 
-                callbackContext.success();
+                cancelAlarms(content);
+
+                if (alarms.length() == 0 || hasExactAlarmPermission()) {
+                    saveAlarmsToPrefs(content, alarms);
+                    setAlarms(content, alarms, false);
+                    callbackContext.success();
+                } else {
+                    callbackContext.error("Error: alarm schedule permission required");
+                }
             } else if (action.equals("stop")) {
                 cleaPendingWakeupResult();
                 cordova.getContext().stopService(new Intent(cordova.getActivity(), WakeupStartService.class));
@@ -180,11 +174,9 @@ public class WakeupPlugin extends CordovaPlugin {
             notificatioPermCallback == null
                 || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
                 || requestCode != ID_PERMISSION_REQUEST_CODE
+                || permissions == null
+                || permissions.length == 0
         ) {
-            return;
-        }
-
-        if (permissions == null || permissions.length == 0) {
             return;
         }
 
@@ -196,6 +188,37 @@ public class WakeupPlugin extends CordovaPlugin {
                 notificatioPermCallback = null;
                 return;
             }
+        }
+    }
+
+    private boolean hasExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true;
+        }
+
+        AlarmManager alarmManager = (AlarmManager) cordova.getContext().getSystemService(Context.ALARM_SERVICE);
+
+        return alarmManager.canScheduleExactAlarms();
+    }
+
+    private boolean openAppAlarmSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return false;
+        }
+
+        try {
+            Context context = cordova.getActivity().getApplicationContext();
+            Intent intent = new Intent(
+                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                Uri.parse("package:" + context.getPackageName())
+            );
+
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            cordova.getActivity().startActivity(intent);
+
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -241,7 +264,7 @@ public class WakeupPlugin extends CordovaPlugin {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 intent.setAction(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
                 intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP){
                 intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
                 intent.putExtra("app_package", context.getPackageName());
                 intent.putExtra("app_uid", context.getApplicationInfo().uid);
@@ -330,10 +353,6 @@ public class WakeupPlugin extends CordovaPlugin {
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
             String serializedAlarms = prefs.getString("alarms", "[]");
 
-            log("Setting alarms:\n" + serializedAlarms);
-
-//            JSONArray alarms = new JSONArray(serializedAlarms);
-//            WakeupPlugin.setAlarms(context, alarms, true);
             return new JSONArray(serializedAlarms);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -341,10 +360,21 @@ public class WakeupPlugin extends CordovaPlugin {
         }
     }
 
-    @SuppressLint({"SimpleDateFormat", "NewApi"})
-    private static void setAlarms(Context context, JSONArray alarms, boolean cancelAlarms) throws JSONException {
+    @SuppressLint({ "SimpleDateFormat", "NewApi" })
+    private static void setAlarms(Context context, JSONArray alarms, boolean cancelAlarms) throws JSONException{
         if (cancelAlarms) {
             cancelAlarms(context);
+        }
+
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
+        if (
+            alarms.length() > 0
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                && !alarmManager.canScheduleExactAlarms()
+        ) {
+            log("Can't set alarms, app can't schedule exact alarms");
+            return;
         }
 
         int offsetAlarm = ID_SEQUENTIAL_OFFSET - 1;
@@ -369,9 +399,6 @@ public class WakeupPlugin extends CordovaPlugin {
 
                 if (alarm.has("extra")) {
                     intent.putExtra("extra", alarm.getJSONObject("extra").toString());
-                    intent.putExtra("skipOnAwake", alarm.getBoolean("skipOnAwake"));
-                    intent.putExtra("skipOnRunning", alarm.getBoolean("skipOnRunning"));
-                    intent.putExtra("startInBackground", alarm.getBoolean("startInBackground"));
                     intent.putExtra("type", type);
                 }
 
@@ -386,9 +413,6 @@ public class WakeupPlugin extends CordovaPlugin {
 
                     if (alarm.has("extra")) {
                         intent.putExtra("extra", alarm.getJSONObject("extra").toString());
-                        intent.putExtra("skipOnAwake", alarm.getBoolean("skipOnAwake"));
-                        intent.putExtra("skipOnRunning", alarm.getBoolean("skipOnRunning"));
-                        intent.putExtra("startInBackground", alarm.getBoolean("startInBackground"));
                         intent.putExtra("type", type);
                         intent.putExtra("time", time.toString());
                         intent.putExtra("day", days.getString(j));
@@ -397,30 +421,6 @@ public class WakeupPlugin extends CordovaPlugin {
                     offsetAlarm++;
                     setNotification(context, type, alarmDate, intent, offsetAlarm);
                 }
-            } else if (type.equals("snooze")) {
-                cancelSnooze(context);
-                Calendar alarmDate = getTimeFromNow(time);
-                Intent intent = new Intent(context, WakeupReceiver.class);
-                if (alarm.has("extra")) {
-                    intent.putExtra("extra", alarm.getJSONObject("extra").toString());
-                    intent.putExtra("type", type);
-                    intent.putExtra("skipOnAwake", alarm.getBoolean("skipOnAwake"));
-                    intent.putExtra("startInBackground", alarm.getBoolean("startInBackground"));
-                }
-                setNotification(context, type, alarmDate, intent, ID_SNOOZE_OFFSET);
-            } else if (type.equals("repeating")) {
-                Calendar alarmDate = getRepeatingAlertDate(time);
-                Intent intent = new Intent(context, WakeupReceiver.class);
-                if (alarm.has("extra")) {
-                    intent.putExtra("extra", alarm.getJSONObject("extra").toString());
-                    intent.putExtra("type", type);
-                    intent.putExtra("skipOnAwake", alarm.getBoolean("skipOnAwake"));
-                    intent.putExtra("skipOnRunning", alarm.getBoolean("skipOnRunning"));
-                    intent.putExtra("startInBackground", alarm.getBoolean("startInBackground"));
-                }
-
-                offsetAlarm++;
-                setNotification(context, type, alarmDate, intent, offsetAlarm);
             }
         }
 
@@ -443,76 +443,44 @@ public class WakeupPlugin extends CordovaPlugin {
         }
     }
 
-    private static void setNotification(Context context, String type, Calendar alarmDate, Intent intent, int id) throws JSONException {
-        if (alarmDate != null) {
-
-            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent sender = PendingIntent.getBroadcast(
-                context, id, intent,
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
-            );
-            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-
-
-            if (type.equals("repeating")) {
-                Log.d(LOG_TAG, "setting alarm every " + alarmDate.get(Calendar.MINUTE) + " minutes; id " + id);
-
-                TimeZone defaultTimeZone = TimeZone.getDefault();
-                Calendar now = new GregorianCalendar(defaultTimeZone);
-                now.set(Calendar.MINUTE, now.get(Calendar.MINUTE) + alarmDate.get(Calendar.MINUTE));
-
-                long intervalMillis = TimeUnit.MINUTES.toMillis(alarmDate.get(Calendar.MINUTE));
-                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, now.getTimeInMillis(), intervalMillis, sender);
-            } else {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                Log.d(LOG_TAG, "setting alarm at " + sdf.format(alarmDate.getTime()) + "; id " + id);
-
-                if (Build.VERSION.SDK_INT >= 23) {
-                    // This method will be triggered even with doze mode activated (limited to once per 9 minutes per app)
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
-                } else if (Build.VERSION.SDK_INT >= 19) {
-                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
-                } else {
-                    alarmManager.set(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
-                }
-            }
-
-            if (connectionCallbackContext != null) {
-                JSONObject o = new JSONObject();
-                o.put("type", "set");
-                o.put("alarm_type", type);
-                o.put("alarm_date", alarmDate.getTimeInMillis());
-
-                log("Alarm time in millis: " + alarmDate.getTimeInMillis());
-
-                PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
-                pluginResult.setKeepCallback(true);
-                connectionCallbackContext.sendPluginResult(pluginResult);
-            }
+    private static void setNotification(Context context, String type, Calendar alarmDate, Intent intent, int id) throws JSONException{
+        if (alarmDate == null) {
+            return;
         }
-    }
 
-    protected static void cancelSnooze(Context context) {
-        Log.d(LOG_TAG, "canceling snooze");
-        Intent intent = new Intent(context, WakeupReceiver.class);
-        PendingIntent sender = PendingIntent.getBroadcast(context, ID_SNOOZE_OFFSET, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        Log.d(LOG_TAG, "cancelling alarm id " + ID_SNOOZE_OFFSET);
-        alarmManager.cancel(sender);
-    }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        log("Setting alarm at " + sdf.format(alarmDate.getTime()) + "; id " + id);
 
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent sender = PendingIntent.getBroadcast(
+            context, id, intent,
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE : PendingIntent.FLAG_UPDATE_CURRENT
+        );
 
-    protected static Calendar getRepeatingAlertDate(JSONObject time) throws JSONException {
-        TimeZone defaultTimeZone = TimeZone.getDefault();
-        Calendar calendar = new GregorianCalendar(defaultTimeZone);
-
-        if (time.has("minutes")) {
-            calendar.set(Calendar.MINUTE, time.getInt("minutes"));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(alarmDate.getTimeInMillis(), sender);
+            alarmManager.setAlarmClock(alarmClockInfo, sender);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
         } else {
-            calendar = null;
+            alarmManager.set(AlarmManager.RTC_WAKEUP, alarmDate.getTimeInMillis(), sender);
         }
 
-        return calendar;
+        if (connectionCallbackContext != null) {
+            JSONObject o = new JSONObject();
+            o.put("type", "set");
+            o.put("alarm_type", type);
+            o.put("alarm_date", alarmDate.getTimeInMillis());
+
+            log("Alarm time in millis: " + alarmDate.getTimeInMillis());
+
+            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, o);
+            pluginResult.setKeepCallback(true);
+            connectionCallbackContext.sendPluginResult(pluginResult);
+        }
     }
 
     private static void cancelAlarms(Context context) {
@@ -544,6 +512,7 @@ public class WakeupPlugin extends CordovaPlugin {
 
         for (int i = 0; i < alarmListSize; i++) {
             log("Cancelling alarm id " + currentAlarmsId[i]);
+
             intent = new Intent(context, WakeupReceiver.class);
             sender = PendingIntent.getBroadcast(
                 context, currentAlarmsId[i], intent,
@@ -568,7 +537,7 @@ public class WakeupPlugin extends CordovaPlugin {
             calendar.set(Calendar.HOUR_OF_DAY, hour);
             calendar.set(Calendar.MINUTE, minute);
             calendar.set(Calendar.SECOND, 0);
-            calendar.set(Calendar.MILLISECOND, 0);
+            calendar.set(Calendar.MILLISECOND,0);
 
             if (calendar.before(now)) {
                 calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) + 1);
@@ -594,7 +563,7 @@ public class WakeupPlugin extends CordovaPlugin {
             calendar.set(Calendar.HOUR_OF_DAY, hour);
             calendar.set(Calendar.MINUTE, minute);
             calendar.set(Calendar.SECOND, 0);
-            calendar.set(Calendar.MILLISECOND, 0);
+            calendar.set(Calendar.MILLISECOND,0);
 
             int currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK); // 1-7 = Sunday-Saturday
             currentDayOfWeek--; // make zero-based
