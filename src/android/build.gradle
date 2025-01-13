@@ -1,8 +1,8 @@
 allprojects {
     repositories {
-        google()
-        jcenter()
-        mavenCentral()
+        maven {
+            url "https://repository.axelor.com/nexus/content/groups/public/"
+        }
     }
 }
 
