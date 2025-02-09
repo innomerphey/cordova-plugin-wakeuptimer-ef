@@ -37,13 +37,8 @@ import java.util.TimerTask;
 import com.google.android.exoplayer2.*;
 import com.google.android.exoplayer2.extractor.*;
 import com.google.android.exoplayer2.source.*;
-import com.google.android.exoplayer2.source.dash.*;
-import com.google.android.exoplayer2.source.hls.*;
-import com.google.android.exoplayer2.source.smoothstreaming.*;
 import com.google.android.exoplayer2.trackselection.*;
-import com.google.android.exoplayer2.ui.*;
 import com.google.android.exoplayer2.upstream.*;
-import com.google.android.exoplayer2.util.*;
 
 public class WakeupStartService extends Service {
     private static final String LOG_TAG = "WakeupStartService";

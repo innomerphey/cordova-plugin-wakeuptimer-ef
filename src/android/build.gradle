@@ -1,11 +1,9 @@
-allprojects {
-    repositories {
-        maven {
-            url "https://repository.axelor.com/nexus/content/groups/public/"
-        }
+repositories {
+    flatDir {
+        dirs "src/main/libs"
     }
 }
 
 dependencies {
-    implementation 'com.google.android.exoplayer:exoplayer:2.11.8'
+    implementation group: 'com.google.android.exoplayer', name: 'exoplayer-core', version: '2.11.8'
 }

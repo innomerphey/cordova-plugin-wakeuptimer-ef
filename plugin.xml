@@ -19,6 +19,7 @@
     <!-- android -->
     <platform name="android">
         <framework src="src/android/build.gradle" custom="true" type="gradleReference" />
+        <resource-file src="libs/com/google/android/exoplayer" target="../../libs/com/google/android/exoplayer" />
 
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="WakeupPlugin" >
